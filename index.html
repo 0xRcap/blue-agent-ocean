@@ -47,6 +47,11 @@
 #intro .sub{font-family:'JetBrains Mono',monospace;letter-spacing:0.24em;font-size:11px;color:rgba(255,255,255,0.45);margin-top:16px;opacity:0;transition:opacity .9s .7s}
 #intro.go .h,#intro.go .sub{opacity:1;transform:none}
 #intro.done{opacity:0}
+#cap{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(8px);max-width:560px;text-align:center;z-index:6;pointer-events:none;opacity:0;transition:opacity .6s ease,transform .6s cubic-bezier(0.32,0.72,0,1)}
+#cap .n{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.22em;font-size:10px;color:#1990FF}
+#cap .x{font-family:'Instrument Sans',sans-serif;font-size:18px;color:#fff;margin-top:9px;line-height:1.45;text-shadow:0 2px 24px rgba(0,0,0,0.8)}
+#cap.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:760px){#stats{display:none}#legend{width:148px;top:68px;left:12px;padding:9px}#top{top:12px;left:12px;right:12px}#intro .h{font-size:30px;letter-spacing:0.22em}#panel,#add{width:calc(100vw - 24px);right:12px}#ticker{max-width:86vw}#cap{bottom:64px}#cap .x{font-size:15px}}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="grade"></div>
@@ -57,6 +62,7 @@
  <div class="s"><div class="k">voyages today</div><div class="v" id="stVoy">0</div></div>
 </div>
 <div id="ticker"><span class="d"></span><span class="m" id="tickerMsg"></span></div>
+<div id="cap"><div class="n" id="capN"></div><div class="x" id="capX"></div></div>
 <div id="intro"><div class="t">03 · OPEN SEA</div><div class="h">OPEN SEA</div><div class="sub">a fleet at sea · bounded · self-custodied</div></div>
 <div id="top"><div id="mark"><span class="b"></span><span class="mono" style="font-size:12px;color:#1990FF">03</span><span class="mono" style="font-size:12px;color:rgba(255,255,255,0.5)">open sea</span></div>
  <div id="topr"><button class="tbtn" id="btnSound">sound off</button><button class="tbtn" id="btnReset">reset view</button><button class="tbtn p" id="btnAdd">add your ship</button></div></div>
@@ -158,21 +164,18 @@ void main(){
  float d0=distance(q,s0),d1=distance(q,s1),d2=distance(q,s2),d3=distance(q,s3);
  vec3 cBASE=vec3(0.02,0.11,0.28),cARB=vec3(0.05,0.09,0.26),cUNI=vec3(0.17,0.04,0.20),cETH=vec3(0.06,0.09,0.16);
  vec3 tint=cBASE;float md=d0;if(d1<md){md=d1;tint=cARB;}if(d2<md){md=d2;tint=cUNI;}if(d3<md){md=d3;tint=cETH;}
- // near-black blueprint water body
+ // even deep-blue water body — troughs stay blue (no black banding), crests only gently lifted
  float hn=clamp(vH*0.32,0.0,1.0);
- vec3 deep=vec3(0.004,0.010,0.022);
- vec3 water=deep+tint*(0.16+0.24*hn);
+ vec3 deep=vec3(0.022,0.055,0.125);
+ vec3 water=deep+tint*(0.10+0.16*hn);
  vec3 col=mix(water,refl,fres);
- // faint blueprint shimmer on wave crests only (no hard lattice)
- float grid=gridLine(P,80.0)*smoothstep(0.7,1.5,vH)*(1.0-smoothstep(240.0,560.0,dist));
- col+=vec3(0.10,0.40,0.95)*grid*0.16;
  // tight moon glint
  float spec=pow(max(dot(reflect(eye,N),l),0.0),120.0);
  col+=vec3(0.5,0.7,1.0)*spec*0.12*detFade;
- // recede into a near-black void
- float fog=smoothstep(300.0,820.0,dist);
- col=mix(col,vec3(0.006,0.012,0.026),fog*0.95);
- col=aces(col*0.95);col=pow(max(col,0.0),vec3(0.62));
+ // gentle recede toward a deep blue horizon (not pure black)
+ float fog=smoothstep(320.0,860.0,dist);
+ col=mix(col,vec3(0.018,0.042,0.10),fog*0.85);
+ col=aces(col*0.98);col=pow(max(col,0.0),vec3(0.62));
  gl_FragColor=vec4(col,1.0);
 }`;
 // seamless, tileable water normal map (periodic sine swell -> wraps perfectly, mip-filters cleanly)
@@ -217,7 +220,7 @@ function buildIsland(size,seed){const g=new THREE.IcosahedronGeometry(size,3);co
 const islMat=new THREE.ShaderMaterial({uniforms:{u_time:{value:0}},extensions:{derivatives:true},vertexShader:`varying vec3 vWP;varying vec3 vN;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*wp;}`,fragmentShader:`precision highp float;uniform float u_time;varying vec3 vWP;varying vec3 vN;void main(){vec3 N=normalize(vN);vec3 Vd=normalize(cameraPosition-vWP);float h=vWP.y;float sp=2.0;float c=abs(fract(h/sp-0.5)-0.5)/max(fwidth(h/sp),1e-4);float contour=1.0-clamp(c,0.0,1.0);float rim=pow(1.0-max(dot(N,Vd),0.0),2.5);vec3 base=vec3(0.012,0.04,0.09);vec3 blue=vec3(0.16,0.55,1.0);vec3 col=base+blue*contour*1.1+blue*rim*0.55;col+=blue*0.05*contour*sin(h*2.5-u_time*2.0);gl_FragColor=vec4(col,1.0);}`});
 // name, x, z, size-weight (~protocol size)
 const PROTO=[['AAVE',-130,-60,1.18],['UNISWAP',80,-95,1.32],['MORPHO',-30,-125,0.82],['GMX',150,-55,0.72],['AERODROME',10,-30,0.6]];
-const islandPos=[];const islLabels=[];
+const islandPos=[];const islLabels=[];const islands=[];
 PROTO.forEach(([nm,x,z,w],idx)=>{const g=new THREE.Group();g.position.set(x,0,z);
  const sz=13*w;const geo=buildIsland(sz,1.3+idx*2.7);const top=geo.userData.top;
  const land=new THREE.Mesh(geo,islMat);land.position.y=1.0;g.add(land);
@@ -225,7 +228,7 @@ PROTO.forEach(([nm,x,z,w],idx)=>{const g=new THREE.Group();g.position.set(x,0,z)
  const ring=new THREE.Mesh(new THREE.RingGeometry(sz*1.2,sz*1.5,56),new THREE.MeshBasicMaterial({color:0x1c7bff,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=0.45;g.add(ring);
  // protocol beacon above the peak
  const lite=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0.7}));const ls=6+5*w;lite.scale.set(ls,ls,1);lite.position.y=1.0+top+5;g.add(lite);
- sc.add(g);islandPos.push(new THREE.Vector3(x,0,z));
+ sc.add(g);islandPos.push(new THREE.Vector3(x,0,z));islands.push({lite:lite,ring:ring,pulse:0,lbase:0.7,rbase:0.5});
  const d=document.createElement('div');d.className='lab';d.innerHTML='<span class="sq" style="background:#1990FF;box-shadow:0 0 8px rgba(25,144,255,0.8)"></span><span class="mono" style="font-size:11px;color:rgba(255,255,255,0.78)">'+nm+'</span>';document.body.appendChild(d);islLabels.push({el:d,pos:new THREE.Vector3(x,1.0+top+9,z)});});
 
 // sea lanes (dotted currents between protocol islands)
@@ -247,6 +250,11 @@ function makeBoat(){const m=new THREE.MeshStandardMaterial({color:0x3a86d4,emiss
 
 const NET={BASE:'#1f6fd0',ARBITRUM:'#3a4fa6',UNICHAIN:'#1d7d86',ETHEREUM:'#3b4256'};
 const V={'TIDEWATCHER':{f:'DCA',n:'BASE',cap:'@saltsailor',a:'214 voyages',pm:['SWAP USDC · ETH · max 250 wk','APPROVE USDC · capped']},'REEF KEEPER':{f:'YIELD',n:'BASE',cap:'anonymous captain',a:'1,902 voyages',pm:['SUPPLY USDC · Aave','CLAIM REWARDS']},'NIGHTCRAWLER':{f:'TRADING',n:'BASE',cap:'anonymous captain',a:'5,310 voyages',pm:['SWAP · 3 pairs · max 1k','APPROVE · capped']},'HARBOR MASTER':{f:'LENDING',n:'ARBITRUM',cap:'@portside',a:'880 voyages',pm:['SUPPLY · BORROW · bounded','REPAY']},'STORMCHASER':{f:'PREDICTION',n:'BASE',cap:'anonymous captain',a:'430 voyages',pm:['BUY OUTCOME · max 100','APPROVE USDC']},'THE CURATOR':{f:'COLLECTING',n:'BASE',cap:'@deepcurrent',a:'testing',pm:['BUY NFT · allowlist · FMV gated','GIFT · holders only']},'DEEP CURRENT':{f:'YIELD',n:'UNICHAIN',cap:'anonymous captain',a:'612 voyages',pm:['LP · bounded range']},'SALT RUNNER':{f:'DCA',n:'BASE',cap:'@brine',a:'140 voyages',pm:['SWAP USDC · cbBTC · weekly']},'LEEWARD':{f:'TRADING',n:'ETHEREUM',cap:'anon','a':'2,070 voyages',pm:['SWAP · max 0.5 ETH']},'SPINDRIFT':{f:'PREDICTION',n:'ARBITRUM',cap:'anon',a:'318 voyages',pm:['BUY OUTCOME · capped']}};
+// scale: generate a larger fleet so the sea reads as a living ecosystem (deterministic, no RNG in names)
+const NAMEP=['SEAGLASS','DRIFTWOOD','MARLIN','CORMORANT','BAROMETER','DEAD RECKON','SOUNDING','GALEFORCE','MOORING','SEXTANT','KEELHAUL','FATHOM','RIPTIDE','LANDFALL','CROWSNEST','BRIGANTINE','FLOTSAM','JETSAM','CASTAWAY','MAELSTROM','UNDERTOW','SQUALL','TRADEWIND','HALYARD','WINDWARD','BowsPRIT'];
+const FLEETP=['DCA','YIELD','TRADING','LENDING','PREDICTION','COLLECTING'];const NETP=['BASE','ARBITRUM','UNICHAIN','ETHEREUM'];
+const PMP={DCA:['SWAP · weekly · capped','APPROVE · capped'],YIELD:['SUPPLY · bounded','CLAIM REWARDS'],TRADING:['SWAP · max bounded','APPROVE · capped'],LENDING:['SUPPLY · BORROW · bounded','REPAY'],PREDICTION:['BUY OUTCOME · capped','APPROVE USDC'],COLLECTING:['BUY NFT · allowlist · FMV gated']};
+NAMEP.forEach((nm,i)=>{const f=FLEETP[i%FLEETP.length];V[nm]={f:f,n:NETP[(i*3+1)%NETP.length],cap:(i%2)?'anonymous captain':'@'+nm.toLowerCase().replace(/\s/g,''),a:(80+((i*137)%1900)).toLocaleString()+' voyages',pm:PMP[f]};});
 const boats=[],hits=[];
 Object.keys(V).forEach((nm)=>{const b=makeBoat();const ud={name:nm,fleet:V[nm].f,x:(Math.random()-0.5)*260,z:-10-Math.random()*120,tgt:Math.floor(Math.random()*islandPos.length),dock:0,spd:7+Math.random()*5,ph:Math.random()*6.28,active:true,sc:0.8};b.userData=Object.assign(b.userData,ud);sc.add(b);boats.push(b);
  const hb=new THREE.Mesh(new THREE.SphereGeometry(7,8,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));sc.add(hb);hb.userData={name:nm,boat:b};hits.push(hb);b.userData.hb=hb;
@@ -271,14 +279,14 @@ function hide(){panel.style.opacity='0';panel.style.transform='translateY(16px)'
 function show(nm){const d=V[nm],nc=NET[d.n]||'#1f6fd0';panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="disp" style="font-size:21px;font-weight:500;color:#fff;line-height:1.1">'+nm.charAt(0)+nm.slice(1).toLowerCase()+'</div><div class="mono" style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:6px;display:flex;align-items:center;gap:7px">agent · '+d.n.toLowerCase()+'<span class="sq" style="background:'+nc+'"></span></div></div><button id="cl" style="background:transparent;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:18px">✕</button></div><div class="mono" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:13px">'+d.cap+' · '+d.a+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:17px"><span class="mono" style="font-size:10px;color:#1990FF">01</span><span class="mono" style="font-size:10px;color:rgba(255,255,255,0.5)">bounds</span></div>'+d.pm.map(x=>'<div class="perm"><span class="sq" style="background:#1990FF;box-shadow:0 0 8px rgba(25,144,255,0.7)"></span><span class="mono" style="font-size:10px;color:rgba(255,255,255,0.72)">'+x+'</span></div>').join('')+'<div style="display:flex;gap:8px;margin-top:17px"><button class="gbtn" id="shx">share</button><button class="gbtn" style="flex:1">open in harbor</button></div>';panel.style.opacity='1';panel.style.transform='translateY(0)';panel.style.pointerEvents='auto';document.getElementById('cl').onclick=()=>{follow=false;hide();};document.getElementById('shx').onclick=function(){window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Sailing on @sailmoney: '+nm+', fully bounded. I keep custody. harbor.sail.money'),'_blank');};}
 
 const ray=new THREE.Raycaster(),mo=new THREE.Vector2();let selected=null;
-cv.addEventListener('click',e=>{mo.x=(e.clientX/W())*2-1;mo.y=-(e.clientY/H())*2+1;ray.setFromCamera(mo,cam);const h=ray.intersectObjects(hits,false)[0];if(h&&h.object.userData.boat.userData.active){selected=h.object.userData.boat;follow=true;document.getElementById('tag').textContent='agent · '+h.object.userData.name;show(h.object.userData.name);pingSonar(selected.position);blip(660.0,0.18,0.2);}else{selected=null;follow=false;document.getElementById('tag').textContent='a fleet at sea';hide();}});
+cv.addEventListener('click',e=>{endTour();mo.x=(e.clientX/W())*2-1;mo.y=-(e.clientY/H())*2+1;ray.setFromCamera(mo,cam);const h=ray.intersectObjects(hits,false)[0];if(h&&h.object.userData.boat.userData.active){selected=h.object.userData.boat;follow=true;document.getElementById('tag').textContent='agent · '+h.object.userData.name;show(h.object.userData.name);pingSonar(selected.position);blip(660.0,0.18,0.2);}else{selected=null;follow=false;document.getElementById('tag').textContent='a fleet at sea';hide();}});
 
 const _v=new THREE.Vector3();
 function project(pos){_v.copy(pos).project(cam);return{x:(_v.x*0.5+0.5)*W(),y:(-_v.y*0.5+0.5)*H(),vis:_v.z<1};}
 const dirv=new THREE.Vector3();
 function updBoat(b,t){const u=b.userData;
  const isl=islandPos[u.tgt];dirv.set(isl.x-u.x,0,isl.z-u.z);const dd=dirv.length();
- if(dd<16){if(u.dock===0){voyages++;pushTicker(u.name+' · '+(VERB[u.fleet]||'acts')+' on '+PROTO[u.tgt][0]+' · '+(V[u.name]?V[u.name].n.toLowerCase():''));blip(432.0,0.13,0.08);}u.dock+=0.016;if(u.dock>2.5){u.dock=0;u.tgt=Math.floor(Math.random()*islandPos.length);}}
+ if(dd<16){if(u.dock===0){voyages++;const v=u.value||120;boundedValue+=v;if(islands[u.tgt])islands[u.tgt].pulse=1.0;pushTicker(u.name+' · '+(u.action||VERB[u.fleet]||'acts')+' $'+v.toLocaleString()+' on '+PROTO[u.tgt][0]+' · '+(V[u.name]?V[u.name].n.toLowerCase():''));blip(432.0,0.13,0.07);}u.dock+=0.016;if(u.dock>2.0){u.dock=0;nextVoyage(u);}}
  else{dirv.normalize();const s=u.spd*0.016;u.x+=dirv.x*s;u.z+=dirv.z*s;}
  const y=waveY(u.x,u.z,t);b.position.set(u.x,y+0.2,u.z);
  b.rotation.set(0,Math.atan2(cam.position.x-u.x,cam.position.z-u.z),Math.sin(t*1.5+u.ph)*0.06);
@@ -304,10 +312,25 @@ function blip(freq,dur,vol){if(!audio||!sndOn)return;try{const ctx=audio.ctx,o=c
 document.getElementById('btnSound').onclick=()=>setSound(!sndOn);
 // idle camera drift + cinematic intro
 controls.autoRotate=false;controls.autoRotateSpeed=0.32;let lastInteract=0;
-controls.addEventListener('start',()=>{lastInteract=t;});
+controls.addEventListener('start',()=>{lastInteract=t;endTour();});
 const introEl=document.getElementById('intro');let introDone=false,introT=0;
 const camStart=new THREE.Vector3(0,440,46),camEnd=new THREE.Vector3(0,152,178),tgtStart=new THREE.Vector3(0,0,-8),tgtEnd=new THREE.Vector3(0,0,-25);
 if(reduce){introDone=true;introEl.style.display='none';}else{controls.enabled=false;cam.position.copy(camStart);controls.target.copy(tgtStart);requestAnimationFrame(()=>introEl.classList.add('go'));}
+// live data: bounded-value accumulator + per-voyage action/value (SINGLE swap point for real on-chain events)
+let boundedValue=4820000;
+const VVALS={DCA:[120,420],YIELD:[600,4200],TRADING:[200,1800],LENDING:[800,6000],PREDICTION:[40,300],COLLECTING:[150,2400]};
+function nextVoyage(u){u.tgt=Math.floor(Math.random()*islandPos.length);u.action=VERB[u.fleet]||'acts';const r=VVALS[u.fleet]||[100,500];u.value=Math.round(r[0]+Math.random()*(r[1]-r[0]));}
+boats.forEach(b=>nextVoyage(b.userData));
+// bounds "fence": the selected agent's on-chain leash, drawn in-world
+const fence=new THREE.Mesh(new THREE.RingGeometry(8.6,9.4,72),new THREE.MeshBasicMaterial({color:0x1990ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));fence.rotation.x=-Math.PI/2;sc.add(fence);
+// drifting particulate for atmospheric depth
+const mN=420,mp=new Float32Array(mN*3);for(let i=0;i<mN;i++){mp[i*3]=(Math.random()-0.5)*760;mp[i*3+1]=2+Math.random()*70;mp[i*3+2]=(Math.random()-0.5)*760;}const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.BufferAttribute(mp,3));const motes=new THREE.Points(mg,new THREE.PointsMaterial({color:0x4dabff,size:0.7,transparent:true,opacity:0.32,blending:THREE.AdditiveBlending,depthWrite:false}));sc.add(motes);
+// narrative onboarding tour
+const capEl=document.getElementById('cap'),capN=document.getElementById('capN'),capX=document.getElementById('capX');
+let tour={active:false,step:-1,t0:0};
+function caption(n,x){capN.textContent=n;capX.textContent=x;capEl.classList.add('show');}
+function endTour(){if(!tour.active)return;tour.active=false;capEl.classList.remove('show');}
+function startTour(){if(reduce)return;const hero=boats.find(b=>b.userData.name==='TIDEWATCHER')||boats[0];if(!hero)return;selected=hero;follow=true;tour.active=true;tour.step=0;tour.t0=0;document.getElementById('tag').textContent='agent · '+hero.userData.name;show(hero.userData.name);pingSonar(hero.position);}
 
 document.getElementById('boot').style.display='none';
 let t=0;(function loop(){try{t+=0.016;seaPlane.material.uniforms.u_time.value=t;sc.children[0].material.uniforms.u_time.value=t;islMat.uniforms.u_time.value=t;
@@ -317,10 +340,18 @@ let t=0;(function loop(){try{t+=0.016;seaPlane.material.uniforms.u_time.value=t;
  if(sonar.visible){sonarT+=0.016;const pr=sonarT/1.2;if(pr>=1.0){sonar.visible=false;}else{const ss=2.0+pr*26.0;sonar.scale.set(ss,ss,ss);sonar.material.opacity=0.7*(1.0-pr);if(selected)sonar.position.set(selected.position.x,selected.position.y+0.4,selected.position.z);}}
  // ticker fade-out
  if(t-tickerAt>4.5)tickerEl.style.opacity='0';
- // instrument HUD (throttled ~2/sec)
- if(((t*60)|0)%30===0){stValue.textContent='$'+((boundedBase+voyages*1300+Math.sin(t*0.2)*4000)/1e6).toFixed(2)+'M';stVoy.textContent=voyages.toLocaleString();}
+ // instrument HUD from live accumulators
+ if(((t*60)|0)%20===0){stValue.textContent='$'+(boundedValue/1e6).toFixed(2)+'M';stVoy.textContent=voyages.toLocaleString();}
+ // island activity pulse decay
+ for(let i=0;i<islands.length;i++){const is=islands[i];if(is.pulse>0)is.pulse=Math.max(0,is.pulse-0.018);is.lite.material.opacity=is.lbase+is.pulse*0.6;is.ring.material.opacity=is.rbase+is.pulse*0.5;}
+ // bounds fence follows the selected agent
+ if(selected){fence.position.set(selected.position.x,selected.position.y+0.3,selected.position.z);fence.material.opacity+=((0.4+0.12*Math.sin(t*3.0))-fence.material.opacity)*0.1;const fsc=1.0+0.03*Math.sin(t*2.0);fence.scale.set(fsc,fsc,fsc);}else{fence.material.opacity+=(0.0-fence.material.opacity)*0.1;}
+ // drifting particulate
+ motes.rotation.y=t*0.008;
+ // narrative tour beats
+ if(tour.active){tour.t0+=0.016;const T=tour.t0;if(tour.step===0){caption('01 · the agent','Meet an agent — an account that trades on your behalf, on a leash.');tour.step=1;}else if(tour.step===1&&T>4.5){caption('02 · bounded','It can only sail to protocols you allow, within the limits you set.');tour.step=2;}else if(tour.step===2&&T>9.0){caption('03 · self-custodied','You keep custody the whole time. Tap any ship to inspect its bounds.');tour.step=3;}else if(tour.step===3&&T>13.0){endTour();}}
  // camera: cinematic intro crane, then orbit controls + idle drift + selection dolly
- if(!introDone){introT+=0.016;const pr=Math.min(1.0,introT/3.4);const e=pr<0.5?2.0*pr*pr:1.0-Math.pow(-2.0*pr+2.0,2.0)/2.0;cam.position.lerpVectors(camStart,camEnd,e);controls.target.lerpVectors(tgtStart,tgtEnd,e);cam.lookAt(controls.target);if(pr>=1.0){introDone=true;controls.enabled=true;introEl.classList.add('done');setTimeout(()=>{introEl.style.display='none';},1200);}}
+ if(!introDone){introT+=0.016;const pr=Math.min(1.0,introT/3.4);const e=pr<0.5?2.0*pr*pr:1.0-Math.pow(-2.0*pr+2.0,2.0)/2.0;cam.position.lerpVectors(camStart,camEnd,e);controls.target.lerpVectors(tgtStart,tgtEnd,e);cam.lookAt(controls.target);if(pr>=1.0){introDone=true;controls.enabled=true;introEl.classList.add('done');setTimeout(()=>{introEl.style.display='none';},1200);startTour();}}
  else{if(follow&&selected){controls.target.lerp(selected.position,0.06);}controls.autoRotate=(!follow&&!selected&&(t-lastInteract>5.0)&&!reduce);controls.update();if(follow&&selected){const off=cam.position.clone().sub(controls.target);if(off.length()>96.0){off.multiplyScalar(0.985);cam.position.copy(controls.target).add(off);}}}
  islLabels.forEach(L=>{const p=project(L.pos);L.el.style.left=p.x+'px';L.el.style.top=p.y+'px';L.el.style.opacity=p.vis?'1':'0';});
  netLabels.forEach(L=>{const p=project(L.pos);L.el.style.left=p.x+'px';L.el.style.top=p.y+'px';L.el.style.opacity=p.vis?'0.9':'0';});
