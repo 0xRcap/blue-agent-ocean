@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Open Sea · Sail</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden;background:#02060f;color:#fff}
+#c{position:fixed;inset:0;display:block;width:100%;height:100%}
+.mono{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.16em}.disp{font-family:'Instrument Sans',sans-serif}
+.sq{width:6px;height:6px;display:inline-block}
+#top{position:fixed;top:20px;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;z-index:5;pointer-events:none}
+#mark{display:flex;align-items:center;gap:11px}#mark .b{width:11px;height:11px;background:#1990FF;box-shadow:0 0 12px rgba(25,144,255,0.9)}
+#topr{display:flex;gap:10px;pointer-events:auto}
+.tbtn{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.12em;font-size:11px;color:rgba(255,255,255,0.72);background:rgba(8,12,20,0.5);border:1px solid rgba(255,255,255,0.14);padding:9px 13px;cursor:pointer;border-radius:2px}.tbtn:hover{color:#fff;border-color:rgba(255,255,255,0.32)}
+.tbtn.p{background:#0E78EA;color:#fff;border-color:#0E78EA}
+#legend{position:fixed;top:84px;left:24px;width:182px;background:rgba(8,12,20,0.5);border:1px solid rgba(255,255,255,0.12);border-radius:2px;padding:12px;z-index:5;backdrop-filter:blur(10px)}
+#legend .h{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:10px}
+.frow{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:6px 4px;cursor:pointer;color:rgba(255,255,255,0.6);border-radius:2px}
+.frow:hover{background:rgba(255,255,255,0.04);color:#fff}.frow.on{color:#fff;background:rgba(25,144,255,0.12)}
+.frow .c{color:rgba(255,255,255,0.4)}
+#search{margin-top:10px;width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;padding:8px 10px;border-radius:2px;text-transform:uppercase}
+#search::placeholder{color:rgba(255,255,255,0.3)}
+#tagwrap{position:fixed;left:24px;bottom:22px;display:flex;align-items:center;gap:10px;z-index:5}#tagwrap .b{width:6px;height:6px;background:#1990FF;box-shadow:0 0 10px rgba(25,144,255,0.9)}
+.lab{position:absolute;transform:translate(-50%,-50%);pointer-events:none;display:flex;align-items:center;gap:7px;transition:opacity .3s;z-index:2}
+.netlab{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.glass{background:rgba(11,15,25,0.6);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 32px 90px -32px rgba(0,0,0,0.9)}
+#panel{position:fixed;right:24px;bottom:22px;width:300px;opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .45s cubic-bezier(0.32,0.72,0,1),transform .45s cubic-bezier(0.32,0.72,0,1);padding:18px;z-index:6;border-radius:2px}
+#add{position:fixed;right:24px;top:84px;width:300px;opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .35s,transform .35s;padding:18px;z-index:6;border-radius:2px}
+#add.show{opacity:1;transform:translateY(0);pointer-events:auto}
+.perm{display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.09);padding:8px 10px;margin-top:8px}
+.gbtn{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.12em;font-size:11px;color:rgba(255,255,255,0.72);background:transparent;border:1px solid rgba(255,255,255,0.14);padding:9px 11px;cursor:pointer}.gbtn:hover{color:#fff;border-color:rgba(255,255,255,0.3)}
+#add input{width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:12px;padding:8px 10px;margin-top:8px;border-radius:2px}
+#boot{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:0.16em;text-transform:uppercase;z-index:7}
+#err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#FF5C6C;font-size:13px;padding:2rem;z-index:9;line-height:1.7}
+#grade{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse 75% 70% at 50% 44%,rgba(0,0,0,0) 38%,rgba(2,5,12,0.34) 78%,rgba(1,3,8,0.62) 100%)}
+#grain{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:140px}
+#stats{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5;pointer-events:none}
+#stats .s{background:rgba(8,12,20,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:2px;padding:7px 14px;text-align:center;backdrop-filter:blur(10px)}
+#stats .k{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.16em;font-size:9px;color:rgba(255,255,255,0.4)}
+#stats .v{font-family:'JetBrains Mono',monospace;font-size:15px;color:#bfe0ff;margin-top:3px}
+#ticker{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;z-index:5;pointer-events:none;background:rgba(8,12,20,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:2px;padding:8px 14px;backdrop-filter:blur(10px);max-width:56vw;opacity:0;transition:opacity .4s}
+#ticker .d{width:6px;height:6px;background:#1990FF;box-shadow:0 0 10px rgba(25,144,255,0.9);flex:none}
+#ticker .m{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;font-size:11px;color:rgba(255,255,255,0.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#intro{position:fixed;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#02060f;transition:opacity 1.1s ease;pointer-events:none}
+#intro .t{font-family:'JetBrains Mono',monospace;letter-spacing:0.42em;font-size:12px;color:#1990FF}
+#intro .h{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:44px;letter-spacing:0.3em;color:#fff;margin-top:16px;opacity:0;transform:translateY(10px);transition:opacity .9s .25s cubic-bezier(0.32,0.72,0,1),transform .9s .25s cubic-bezier(0.32,0.72,0,1)}
+#intro .sub{font-family:'JetBrains Mono',monospace;letter-spacing:0.24em;font-size:11px;color:rgba(255,255,255,0.45);margin-top:16px;opacity:0;transition:opacity .9s .7s}
+#intro.go .h,#intro.go .sub{opacity:1;transform:none}
+#intro.done{opacity:0}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="grade"></div>
+<div id="grain"></div>
+<div id="stats">
+ <div class="s"><div class="k">agents at sea</div><div class="v" id="stAgents">0</div></div>
+ <div class="s"><div class="k">bounded value</div><div class="v" id="stValue">$0</div></div>
+ <div class="s"><div class="k">voyages today</div><div class="v" id="stVoy">0</div></div>
+</div>
+<div id="ticker"><span class="d"></span><span class="m" id="tickerMsg"></span></div>
+<div id="intro"><div class="t">03 · OPEN SEA</div><div class="h">OPEN SEA</div><div class="sub">a fleet at sea · bounded · self-custodied</div></div>
+<div id="top"><div id="mark"><span class="b"></span><span class="mono" style="font-size:12px;color:#1990FF">03</span><span class="mono" style="font-size:12px;color:rgba(255,255,255,0.5)">open sea</span></div>
+ <div id="topr"><button class="tbtn" id="btnSound">sound off</button><button class="tbtn" id="btnReset">reset view</button><button class="tbtn p" id="btnAdd">add your ship</button></div></div>
+<div id="legend"><div class="h"><span class="mono">fleets</span><span class="mono" id="fcount">0</span></div><div id="frows"></div><input id="search" placeholder="search ship"/></div>
+<div id="tagwrap"><span class="b"></span><span id="tag" class="mono" style="font-size:12px;color:rgba(255,255,255,0.72)">a fleet at sea</span></div>
+<div id="panel" class="glass"></div>
+<div id="add" class="glass">
+ <div class="disp" style="font-size:18px;font-weight:500">Add your ship</div>
+ <div class="mono" style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:6px">pseudonymous · opt-in · you keep custody</div>
+ <button class="gbtn" style="margin-top:14px;width:100%"><i></i>connect &amp; sign</button>
+ <input placeholder="ship name"/><input placeholder="the voyage"/><input placeholder="captain handle (optional)"/>
+ <button class="gbtn p" id="addShare" style="margin-top:12px;width:100%;background:#0E78EA;color:#fff;border-color:#0E78EA">share on x</button>
+</div>
+<div id="boot" class="mono">booting open sea</div>
+<div id="err" class="mono"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
+<script src="boat-grid.js"></script>
+<script>
+function fail(m){var e=document.getElementById('err');e.style.display='flex';e.innerHTML=m;var b=document.getElementById('boot');if(b)b.style.display='none';}
+try{
+if(!window.THREE)throw new Error('three.js failed to load · refresh');
+const CG=`
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);return -1.0+2.0*mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}
+const int ITER_GEO=3;const float SEA_HEIGHT=0.6;const float SEA_CHOPPY=4.0;const float SEA_SPEED=0.4;const float SEA_FREQ=0.16;const mat2 OCT_M=mat2(1.6,1.2,-1.2,1.6);
+#define SEA_TIME (1.0+u_time*SEA_SPEED)
+float seaOctave(vec2 uv,float choppy){uv+=noise(uv);vec2 wv=1.0-abs(sin(uv)),sw=abs(cos(uv));wv=mix(wv,sw,wv);return pow(1.0-pow(wv.x*wv.y,0.65),choppy);}
+float seaHeight(vec2 p){float freq=SEA_FREQ,amp=SEA_HEIGHT,choppy=SEA_CHOPPY,h=0.0;vec2 uv=p;uv.x*=0.75;for(int i=0;i<ITER_GEO;i++){float d=seaOctave((uv+SEA_TIME)*freq,choppy)+seaOctave((uv-SEA_TIME)*freq,choppy);h+=d*amp;uv*=OCT_M;freq*=1.9;amp*=0.22;choppy=mix(choppy,1.0,0.2);}return h;}
+float starField(vec3 dir){if(dir.y<0.01)return 0.0;float sc=130.0;vec2 uv=vec2(atan(dir.z,dir.x),asin(clamp(dir.y,-1.0,1.0)))*sc;vec2 id=floor(uv);vec2 f=fract(uv)-0.5;float h=hash(id);if(h<0.925)return 0.0;vec2 sp=(vec2(hash(id*3.71+1.3),hash(id*2.13+5.7))-0.5)*0.65;float d=length(f-sp);float br=max(0.0,1.0-d*28.0);float tw=0.75+0.25*sin(u_time*(hash(id+7.3)*4.0+0.8)+hash(id*1.7)*6.28);return br*br*(h-0.925)*13.5*tw;}
+const vec3 MOON_DIR=vec3(0.38,0.62,0.68);
+vec3 moonContrib(vec3 dir){float d=dot(normalize(dir),normalize(MOON_DIR));float disc=smoothstep(0.9990,0.9997,d);float corona=pow(max(d,0.0),90.0)*0.14;float glow=pow(max(d,0.0),14.0)*0.02;return disc*vec3(0.96,0.94,0.88)*2.2+corona*vec3(0.55,0.62,0.72)+glow*vec3(0.18,0.22,0.35);}
+vec3 nightSkyColor(vec3 e){float y=clamp(e.y,0.0,1.0);vec3 sky=mix(vec3(0.05,0.07,0.16),vec3(0.012,0.018,0.05),pow(y,0.4));sky+=vec3(0.06,0.09,0.24)*pow(1.0-y,5.0)*0.5;sky+=starField(e)*vec3(0.88,0.92,1.0);sky+=moonContrib(e);return sky;}
+vec3 skyColor(vec3 e){return nightSkyColor(e);}
+// filmic highlight rolloff (ACES approx) — keeps deep tones rich, never clips to white
+vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}
+`;
+const cv=document.getElementById('c'),panel=document.getElementById('panel');
+const W=()=>innerWidth,H=()=>innerHeight,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sc=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(42,W()/H(),0.5,3000);cam.position.set(0,152,178);
+const rdr=new THREE.WebGLRenderer({canvas:cv,antialias:true});rdr.setPixelRatio(Math.min(devicePixelRatio,2));rdr.setSize(W(),H());
+let composer=null;
+if(typeof THREE.EffectComposer==='function'){
+ // multisampled render target so the bloom composer keeps MSAA — crisp voxel boats at every zoom
+ let crt=null;try{const dz=rdr.getDrawingBufferSize(new THREE.Vector2());if(rdr.capabilities.isWebGL2&&typeof THREE.WebGLMultisampleRenderTarget==='function'){crt=new THREE.WebGLMultisampleRenderTarget(dz.x,dz.y);crt.samples=4;}}catch(e){crt=null;}
+ composer=new THREE.EffectComposer(rdr,crt||undefined);composer.addPass(new THREE.RenderPass(sc,cam));composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(W(),H()),0.38,0.85,0.5));composer.setSize(W(),H());}
+const controls=new THREE.OrbitControls(cam,rdr.domElement);controls.enableDamping=true;controls.dampingFactor=0.08;controls.target.set(0,0,-25);controls.maxPolarAngle=1.24;controls.minDistance=45;controls.maxDistance=360;controls.enablePan=true;controls.screenSpacePanning=false;controls.rotateSpeed=0.45;
+let follow=false;controls.addEventListener('start',()=>{follow=false;});
+
+sc.add(new THREE.Mesh(new THREE.SphereGeometry(1200,48,48),new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:{u_time:{value:0}},vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'precision highp float;uniform float u_time;'+CG+'varying vec3 vD;void main(){vec3 c=skyColor(normalize(vD));c=aces(c*1.1);c=pow(max(c,0.0),vec3(0.6));gl_FragColor=vec4(c,1.0);}'})));
+
+const WS=0.2,AMPY=1.3;
+// NOTE: wy() / seaHeight height math is byte-identical to the JS port (seaHJ). Only shading below changed.
+const seaVert=`precision highp float;uniform float u_time;uniform mat4 uReflMtx;${CG}
+varying vec3 vWP;varying vec3 vWN;varying float vH;varying vec4 vMirror;
+float wy(float x,float z){return seaHeight(vec2(x,z)*${WS})*${AMPY};}
+void main(){
+ vec3 wp=(modelMatrix*vec4(position,1.0)).xyz;
+ float h=wy(wp.x,wp.z);wp.y+=h;
+ float e=0.6;
+ float hx=wy(wp.x+e,wp.z)-wy(wp.x-e,wp.z);
+ float hz=wy(wp.x,wp.z+e)-wy(wp.x,wp.z-e);
+ vWN=normalize(vec3(-hx,2.0*e,-hz));
+ vWP=wp;vH=h;
+ vMirror=uReflMtx*vec4(wp,1.0);
+ gl_Position=projectionMatrix*viewMatrix*vec4(wp,1.0);
+}`;
+const seaFrag=`precision highp float;uniform float u_time;${CG}
+varying vec3 vWP;varying vec3 vWN;varying float vH;varying vec4 vMirror;
+uniform sampler2D u_norm;uniform sampler2D tReflect;uniform float uHasRefl;
+// derivative anti-aliased world-space grid line (never aliases into static)
+float gridLine(vec2 p,float sp){vec2 g=abs(fract(p/sp-0.5)-0.5)/fwidth(p/sp);return 1.0-clamp(min(g.x,g.y),0.0,1.0);}
+void main(){
+ vec2 P=vWP.xz;
+ float dist=length(cameraPosition-vWP);
+ vec2 ripA=texture2D(u_norm,P*0.022+vec2(u_time*0.006,u_time*0.004)).xy*2.0-1.0;
+ vec2 ripB=texture2D(u_norm,P*0.061-vec2(u_time*0.010,u_time*0.0035)).xy*2.0-1.0;
+ vec2 rip=ripA+ripB*0.5;
+ float detFade=1.0-smoothstep(220.0,760.0,dist);
+ vec3 N=normalize(vWN+vec3(rip.x,0.0,rip.y)*(0.30*detFade+0.1));
+ vec3 eye=normalize(vWP-cameraPosition);
+ vec3 l=normalize(MOON_DIR);
+ float fres=clamp(0.02+0.5*pow(1.0-max(dot(N,-eye),0.0),5.0),0.0,0.6);
+ vec3 refl=mix(skyColor(reflect(eye,N)),vec3(0.04,0.09,0.20),0.4);
+ // faint real reflection so the chart feels alive (edge-masked against grazing streaks)
+ if(uHasRefl>0.5){vec4 mc=vMirror;mc.xy+=N.xz*0.025*mc.w;vec2 ruv=mc.xy/mc.w;vec3 rr=texture2DProj(tReflect,mc).rgb;vec2 ed=smoothstep(0.0,0.08,ruv)*smoothstep(0.0,0.08,vec2(1.0)-ruv);float m=ed.x*ed.y*step(0.001,mc.w);refl=mix(refl,rr,0.55*m);}
+ // chain-tinted regions (dark, blue-leaning per Electric Blueprint brand)
+ vec2 q=P+vec2(noise(P*0.012),noise(P*0.012+7.3))*80.0;
+ vec2 s0=vec2(-260.,-150.),s1=vec2(-70.,-20.),s2=vec2(120.,-150.),s3=vec2(270.,-40.);
+ float d0=distance(q,s0),d1=distance(q,s1),d2=distance(q,s2),d3=distance(q,s3);
+ vec3 cBASE=vec3(0.02,0.11,0.28),cARB=vec3(0.05,0.09,0.26),cUNI=vec3(0.17,0.04,0.20),cETH=vec3(0.06,0.09,0.16);
+ vec3 tint=cBASE;float md=d0;if(d1<md){md=d1;tint=cARB;}if(d2<md){md=d2;tint=cUNI;}if(d3<md){md=d3;tint=cETH;}
+ // near-black blueprint water body
+ float hn=clamp(vH*0.32,0.0,1.0);
+ vec3 deep=vec3(0.004,0.010,0.022);
+ vec3 water=deep+tint*(0.16+0.24*hn);
+ vec3 col=mix(water,refl,fres);
+ // faint blueprint shimmer on wave crests only (no hard lattice)
+ float grid=gridLine(P,80.0)*smoothstep(0.7,1.5,vH)*(1.0-smoothstep(240.0,560.0,dist));
+ col+=vec3(0.10,0.40,0.95)*grid*0.16;
+ // tight moon glint
+ float spec=pow(max(dot(reflect(eye,N),l),0.0),120.0);
+ col+=vec3(0.5,0.7,1.0)*spec*0.12*detFade;
+ // recede into a near-black void
+ float fog=smoothstep(300.0,820.0,dist);
+ col=mix(col,vec3(0.006,0.012,0.026),fog*0.95);
+ col=aces(col*0.95);col=pow(max(col,0.0),vec3(0.62));
+ gl_FragColor=vec4(col,1.0);
+}`;
+// seamless, tileable water normal map (periodic sine swell -> wraps perfectly, mip-filters cleanly)
+function makeWaterNormal(size){const c=document.createElement('canvas');c.width=c.height=size;const ctx=c.getContext('2d');const img=ctx.createImageData(size,size);const waves=[[1,2,0.55,0.0],[2,1,0.5,1.3],[3,2,0.34,2.1],[2,4,0.28,3.4],[5,3,0.2,0.7],[4,6,0.15,4.2],[7,5,0.1,2.6]];function Hh(u,v){let h=0;for(let i=0;i<waves.length;i++){const w=waves[i];h+=w[2]*Math.sin(6.2831853*(w[0]*u+w[1]*v)+w[3]);}return h;}const eps=1.5/size,B=0.045;for(let y=0;y<size;y++){for(let x=0;x<size;x++){const u=x/size,v=y/size;const dx=(Hh(u+eps,v)-Hh(u-eps,v))/(2*eps);const dy=(Hh(u,v+eps)-Hh(u,v-eps))/(2*eps);let nx=-dx*B,ny=-dy*B,nz=1.0;const il=1/Math.sqrt(nx*nx+ny*ny+nz*nz);nx*=il;ny*=il;nz*=il;const i=(y*size+x)*4;img.data[i]=(nx*0.5+0.5)*255;img.data[i+1]=(ny*0.5+0.5)*255;img.data[i+2]=(nz*0.5+0.5)*255;img.data[i+3]=255;}}ctx.putImageData(img,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=true;t.anisotropy=rdr.capabilities.getMaxAnisotropy();t.needsUpdate=true;return t;}
+const waterNorm=makeWaterNormal(256);
+const seaPlane=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200,380,380),new THREE.ShaderMaterial({uniforms:{u_time:{value:0},u_norm:{value:waterNorm},tReflect:{value:waterNorm},uReflMtx:{value:new THREE.Matrix4()},uHasRefl:{value:0}},extensions:{derivatives:true},vertexShader:seaVert,fragmentShader:seaFrag}));
+seaPlane.rotation.x=-Math.PI/2;sc.add(seaPlane);
+// planar reflection: a mirror plane at the waterline renders the scene into a texture the sea samples
+let mirror=null;
+if(typeof THREE.Reflector==='function'){
+ mirror=new THREE.Reflector(new THREE.PlaneGeometry(1200,1200),{textureWidth:768,textureHeight:768,clipBias:0.6,color:0x0a1320});
+ mirror.rotation.x=-Math.PI/2;mirror.position.y=-0.4;sc.add(mirror);
+ const u=seaPlane.material.uniforms;
+ u.tReflect.value=mirror.getRenderTarget().texture;
+ u.uReflMtx.value=mirror.material.uniforms.textureMatrix.value;
+ u.uHasRefl.value=1.0;
+}
+
+// moonlit rig: cool ambient, soft moon key, faint warm fill, cool back-rim
+sc.fog=new THREE.FogExp2(0x0a1526,0.0017);
+sc.add(new THREE.AmbientLight(0x5b6a92,0.75));
+const key=new THREE.DirectionalLight(0xdce8ff,1.75);key.position.set(60,95,105);sc.add(key);
+const warm=new THREE.DirectionalLight(0xffc486,0.3);warm.position.set(-40,24,-60);sc.add(warm);
+const moonRim=new THREE.DirectionalLight(0x90b6ff,0.6);moonRim.position.set(-26,46,82);sc.add(moonRim);
+
+const fr=x=>x-Math.floor(x);
+function jhash(x,y){return fr(Math.sin(x*127.1+y*311.7)*43758.5453123);}
+function jnoise(px,py){const ix=Math.floor(px),iy=Math.floor(py),fx=px-ix,fy=py-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy),a=jhash(ix,iy),b=jhash(ix+1,iy),c=jhash(ix,iy+1),d=jhash(ix+1,iy+1),m0=a+(b-a)*ux,m1=c+(d-c)*ux;return -1+2*(m0+(m1-m0)*uy);}
+function jOct(ux,uy,ch){const n=jnoise(ux,uy);ux+=n;uy+=n;let wx=1-Math.abs(Math.sin(ux)),wy=1-Math.abs(Math.sin(uy));const sx=Math.abs(Math.cos(ux)),sy=Math.abs(Math.cos(uy));wx=wx+(sx-wx)*wx;wy=wy+(sy-wy)*wy;return Math.pow(1-Math.pow(wx*wy,0.65),ch);}
+function seaHJ(px,pz,time){let freq=0.16,amp=0.6,ch=4.0,h=0,ux=px*0.75,uy=pz;const ST=1+time*0.4;for(let i=0;i<3;i++){const d=jOct((ux+ST)*freq,(uy+ST)*freq,ch)+jOct((ux-ST)*freq,(uy-ST)*freq,ch);h+=d*amp;const nx=1.6*ux+1.2*uy,ny=-1.2*ux+1.6*uy;ux=nx;uy=ny;freq*=1.9;amp*=0.22;ch=ch+(1-ch)*0.2;}return h;}
+function waveY(x,z,t){return seaHJ(x*WS,z*WS,t)*AMPY;}
+
+const _gc=document.createElement('canvas');_gc.width=_gc.height=64;const _gx=_gc.getContext('2d');const _gg=_gx.createRadialGradient(32,32,0,32,32,32);_gg.addColorStop(0,'rgba(130,195,255,0.95)');_gg.addColorStop(0.4,'rgba(25,144,255,0.4)');_gg.addColorStop(1,'rgba(25,144,255,0)');_gx.fillStyle=_gg;_gx.fillRect(0,0,64,64);const glowTex=new THREE.CanvasTexture(_gc);
+// shoreline foam ring texture (soft white-blue annulus)
+const _fc=document.createElement('canvas');_fc.width=_fc.height=128;const _fx=_fc.getContext('2d');const _fg=_fx.createRadialGradient(64,64,0,64,64,64);_fg.addColorStop(0,'rgba(120,180,255,0)');_fg.addColorStop(0.6,'rgba(120,180,255,0)');_fg.addColorStop(0.76,'rgba(195,228,255,0.55)');_fg.addColorStop(0.88,'rgba(150,200,255,0.14)');_fg.addColorStop(1,'rgba(120,180,255,0)');_fx.fillStyle=_fg;_fx.fillRect(0,0,128,128);const foamTex=new THREE.CanvasTexture(_fc);
+// turquoise shallow lagoon ring around each island
+const _lc=document.createElement('canvas');_lc.width=_lc.height=128;const _lx=_lc.getContext('2d');const _lg=_lx.createRadialGradient(64,64,0,64,64,64);_lg.addColorStop(0,'rgba(120,228,214,0)');_lg.addColorStop(0.32,'rgba(120,228,214,0)');_lg.addColorStop(0.44,'rgba(126,232,216,0.72)');_lg.addColorStop(0.64,'rgba(64,178,202,0.30)');_lg.addColorStop(1,'rgba(64,178,202,0)');_lx.fillStyle=_lg;_lx.fillRect(0,0,128,128);const shallowTex=new THREE.CanvasTexture(_lc);
+
+// islands = protocols. Holographic topographic constructs (glowing blue contour lines + rim glow).
+function buildIsland(size,seed){const g=new THREE.IcosahedronGeometry(size,3);const p=g.attributes.position;const lobes=3+Math.floor(seed*7.0)%4;const hp=0.24+0.2*(0.5+0.5*Math.sin(seed*5.0));const peak=1.2+0.6*Math.sin(seed*2.0);let top=0;for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const a=Math.atan2(z,x);const n=0.62+0.5*Math.sin(x*0.4+seed*1.7)*Math.cos(z*0.45+seed*0.9)+0.26*Math.sin(x*0.9+z*0.6+seed*2.3)+0.18*Math.sin(a*lobes+seed*3.1);x*=n;z*=n;y=y*hp;if(y<0)y*=0.05;else y*=peak;const yf=Math.max(y,-0.4);p.setXYZ(i,x,yf,z);if(yf>top)top=yf;}p.needsUpdate=true;g.computeVertexNormals();g.userData.top=top;return g;}
+// shared holographic island material: dark base, glowing blue topographic contours + fresnel rim
+const islMat=new THREE.ShaderMaterial({uniforms:{u_time:{value:0}},extensions:{derivatives:true},vertexShader:`varying vec3 vWP;varying vec3 vN;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWP=wp.xyz;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*wp;}`,fragmentShader:`precision highp float;uniform float u_time;varying vec3 vWP;varying vec3 vN;void main(){vec3 N=normalize(vN);vec3 Vd=normalize(cameraPosition-vWP);float h=vWP.y;float sp=2.0;float c=abs(fract(h/sp-0.5)-0.5)/max(fwidth(h/sp),1e-4);float contour=1.0-clamp(c,0.0,1.0);float rim=pow(1.0-max(dot(N,Vd),0.0),2.5);vec3 base=vec3(0.012,0.04,0.09);vec3 blue=vec3(0.16,0.55,1.0);vec3 col=base+blue*contour*1.1+blue*rim*0.55;col+=blue*0.05*contour*sin(h*2.5-u_time*2.0);gl_FragColor=vec4(col,1.0);}`});
+// name, x, z, size-weight (~protocol size)
+const PROTO=[['AAVE',-130,-60,1.18],['UNISWAP',80,-95,1.32],['MORPHO',-30,-125,0.82],['GMX',150,-55,0.72],['AERODROME',10,-30,0.6]];
+const islandPos=[];const islLabels=[];
+PROTO.forEach(([nm,x,z,w],idx)=>{const g=new THREE.Group();g.position.set(x,0,z);
+ const sz=13*w;const geo=buildIsland(sz,1.3+idx*2.7);const top=geo.userData.top;
+ const land=new THREE.Mesh(geo,islMat);land.position.y=1.0;g.add(land);
+ // glowing blueprint shoreline ring at the waterline
+ const ring=new THREE.Mesh(new THREE.RingGeometry(sz*1.2,sz*1.5,56),new THREE.MeshBasicMaterial({color:0x1c7bff,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=0.45;g.add(ring);
+ // protocol beacon above the peak
+ const lite=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0.7}));const ls=6+5*w;lite.scale.set(ls,ls,1);lite.position.y=1.0+top+5;g.add(lite);
+ sc.add(g);islandPos.push(new THREE.Vector3(x,0,z));
+ const d=document.createElement('div');d.className='lab';d.innerHTML='<span class="sq" style="background:#1990FF;box-shadow:0 0 8px rgba(25,144,255,0.8)"></span><span class="mono" style="font-size:11px;color:rgba(255,255,255,0.78)">'+nm+'</span>';document.body.appendChild(d);islLabels.push({el:d,pos:new THREE.Vector3(x,1.0+top+9,z)});});
+
+// sea lanes (dotted currents between protocol islands)
+const lanePts=[];const edges=[[0,4],[4,3],[4,1],[1,3],[0,3],[1,2]];
+edges.forEach(([a,b])=>{const A=islandPos[a],B=islandPos[b];const seg=Math.max(6,Math.floor(A.distanceTo(B)/9));for(let i=1;i<seg;i++){const tt=i/seg;lanePts.push(A.x+(B.x-A.x)*tt,2,A.z+(B.z-A.z)*tt);}});
+const laneGeo=new THREE.BufferGeometry();laneGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lanePts),3));
+const laneMat=new THREE.PointsMaterial({color:0x2f7fd0,size:1.6,transparent:true,opacity:0.32,blending:THREE.AdditiveBlending,depthWrite:false});
+sc.add(new THREE.Points(laneGeo,laneMat));
+
+// network sea labels
+const nets=[['BASE',-230,-150,'#4d9bf0'],['ARBITRUM',-70,-10,'#7886de'],['UNICHAIN',120,-150,'#f062c0'],['ETHEREUM',250,-40,'#9aa3c4']];
+const netLabels=nets.map(([nm,x,z,col])=>{const d=document.createElement('div');d.className='netlab';d.innerHTML='<span class="mono" style="font-size:11px;color:'+col+';opacity:0.6">'+nm+' sea</span>';document.body.appendChild(d);return{el:d,pos:new THREE.Vector3(x,1,z)};});
+
+// pixel boats
+const GW=window.BOAT_W,GH=window.BOAT_H,GRID=window.BOAT_GRID;
+const cells=[];for(let r=0;r<GH;r++)for(let c=0;c<GW;c++){if(GRID[r][c])cells.push([(c-GW/2+0.5),(GH-1-r)+0.5]);}
+const cellGeo=new THREE.BoxGeometry(1.02,1.02,3.2);const _m4=new THREE.Matrix4();
+function makeBoat(){const m=new THREE.MeshStandardMaterial({color:0x3a86d4,emissive:0x0a2a52,emissiveIntensity:0.2,metalness:0.4,roughness:0.42});const im=new THREE.InstancedMesh(cellGeo,m,cells.length);for(let i=0;i<cells.length;i++){_m4.makeTranslation(cells[i][0],cells[i][1],0);im.setMatrixAt(i,_m4);}im.instanceMatrix.needsUpdate=true;const b=new THREE.Group();b.add(im);b.userData.mat=m;b.scale.setScalar(0.8);return b;}
+
+const NET={BASE:'#1f6fd0',ARBITRUM:'#3a4fa6',UNICHAIN:'#1d7d86',ETHEREUM:'#3b4256'};
+const V={'TIDEWATCHER':{f:'DCA',n:'BASE',cap:'@saltsailor',a:'214 voyages',pm:['SWAP USDC · ETH · max 250 wk','APPROVE USDC · capped']},'REEF KEEPER':{f:'YIELD',n:'BASE',cap:'anonymous captain',a:'1,902 voyages',pm:['SUPPLY USDC · Aave','CLAIM REWARDS']},'NIGHTCRAWLER':{f:'TRADING',n:'BASE',cap:'anonymous captain',a:'5,310 voyages',pm:['SWAP · 3 pairs · max 1k','APPROVE · capped']},'HARBOR MASTER':{f:'LENDING',n:'ARBITRUM',cap:'@portside',a:'880 voyages',pm:['SUPPLY · BORROW · bounded','REPAY']},'STORMCHASER':{f:'PREDICTION',n:'BASE',cap:'anonymous captain',a:'430 voyages',pm:['BUY OUTCOME · max 100','APPROVE USDC']},'THE CURATOR':{f:'COLLECTING',n:'BASE',cap:'@deepcurrent',a:'testing',pm:['BUY NFT · allowlist · FMV gated','GIFT · holders only']},'DEEP CURRENT':{f:'YIELD',n:'UNICHAIN',cap:'anonymous captain',a:'612 voyages',pm:['LP · bounded range']},'SALT RUNNER':{f:'DCA',n:'BASE',cap:'@brine',a:'140 voyages',pm:['SWAP USDC · cbBTC · weekly']},'LEEWARD':{f:'TRADING',n:'ETHEREUM',cap:'anon','a':'2,070 voyages',pm:['SWAP · max 0.5 ETH']},'SPINDRIFT':{f:'PREDICTION',n:'ARBITRUM',cap:'anon',a:'318 voyages',pm:['BUY OUTCOME · capped']}};
+const boats=[],hits=[];
+Object.keys(V).forEach((nm)=>{const b=makeBoat();const ud={name:nm,fleet:V[nm].f,x:(Math.random()-0.5)*260,z:-10-Math.random()*120,tgt:Math.floor(Math.random()*islandPos.length),dock:0,spd:7+Math.random()*5,ph:Math.random()*6.28,active:true,sc:0.8};b.userData=Object.assign(b.userData,ud);sc.add(b);boats.push(b);
+ const hb=new THREE.Mesh(new THREE.SphereGeometry(7,8,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));sc.add(hb);hb.userData={name:nm,boat:b};hits.push(hb);b.userData.hb=hb;
+ const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0.24}));glow.scale.set(4.2,4.2,1);sc.add(glow);b.userData.glow=glow;
+ const WN=20,wpos=new Float32Array(WN*3),wg=new THREE.BufferGeometry();wg.setAttribute('position',new THREE.BufferAttribute(wpos,3));const wmat=new THREE.LineBasicMaterial({color:0x4dabff,transparent:true,opacity:0.4,blending:THREE.AdditiveBlending,depthWrite:false});const wake=new THREE.Line(wg,wmat);sc.add(wake);b.userData.wake={geo:wg,arr:wpos,n:WN,buf:[],mat:wmat};});
+
+// legend
+const fleetNames=[...new Set(Object.values(V).map(d=>d.f))];
+let activeFleet=null,searchStr='';
+const frows=document.getElementById('frows');
+function mkRow(label,count,fleet){const r=document.createElement('div');r.className='frow'+(fleet===activeFleet?' on':'');r.innerHTML='<span class="mono">'+label+'</span><span class="c mono">'+count+'</span>';r.onclick=()=>{activeFleet=fleet;buildLegend();applyFilter();};return r;}
+function buildLegend(){frows.innerHTML='';frows.appendChild(mkRow('all',boats.length,null));fleetNames.forEach(f=>{const c=boats.filter(b=>b.userData.fleet===f).length;frows.appendChild(mkRow(f.toLowerCase(),c,f));});document.getElementById('fcount').textContent=boats.length;}
+function applyFilter(){boats.forEach(b=>{const u=b.userData;const okF=!activeFleet||u.fleet===activeFleet;const okS=!searchStr||u.name.toLowerCase().includes(searchStr);u.active=okF&&okS;});}
+buildLegend();
+document.getElementById('search').addEventListener('input',e=>{searchStr=e.target.value.toLowerCase();applyFilter();});
+document.getElementById('btnAdd').onclick=()=>document.getElementById('add').classList.toggle('show');
+document.getElementById('addShare').onclick=()=>window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('My agent is sailing on @sailmoney, fully bounded. I keep custody. harbor.sail.money'),'_blank');
+document.getElementById('btnReset').onclick=()=>{follow=false;controls.target.set(0,0,-25);};
+
+// vessel panel
+function hide(){panel.style.opacity='0';panel.style.transform='translateY(16px)';panel.style.pointerEvents='none';}
+function show(nm){const d=V[nm],nc=NET[d.n]||'#1f6fd0';panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="disp" style="font-size:21px;font-weight:500;color:#fff;line-height:1.1">'+nm.charAt(0)+nm.slice(1).toLowerCase()+'</div><div class="mono" style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:6px;display:flex;align-items:center;gap:7px">agent · '+d.n.toLowerCase()+'<span class="sq" style="background:'+nc+'"></span></div></div><button id="cl" style="background:transparent;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:18px">✕</button></div><div class="mono" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:13px">'+d.cap+' · '+d.a+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:17px"><span class="mono" style="font-size:10px;color:#1990FF">01</span><span class="mono" style="font-size:10px;color:rgba(255,255,255,0.5)">bounds</span></div>'+d.pm.map(x=>'<div class="perm"><span class="sq" style="background:#1990FF;box-shadow:0 0 8px rgba(25,144,255,0.7)"></span><span class="mono" style="font-size:10px;color:rgba(255,255,255,0.72)">'+x+'</span></div>').join('')+'<div style="display:flex;gap:8px;margin-top:17px"><button class="gbtn" id="shx">share</button><button class="gbtn" style="flex:1">open in harbor</button></div>';panel.style.opacity='1';panel.style.transform='translateY(0)';panel.style.pointerEvents='auto';document.getElementById('cl').onclick=()=>{follow=false;hide();};document.getElementById('shx').onclick=function(){window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Sailing on @sailmoney: '+nm+', fully bounded. I keep custody. harbor.sail.money'),'_blank');};}
+
+const ray=new THREE.Raycaster(),mo=new THREE.Vector2();let selected=null;
+cv.addEventListener('click',e=>{mo.x=(e.clientX/W())*2-1;mo.y=-(e.clientY/H())*2+1;ray.setFromCamera(mo,cam);const h=ray.intersectObjects(hits,false)[0];if(h&&h.object.userData.boat.userData.active){selected=h.object.userData.boat;follow=true;document.getElementById('tag').textContent='agent · '+h.object.userData.name;show(h.object.userData.name);pingSonar(selected.position);blip(660.0,0.18,0.2);}else{selected=null;follow=false;document.getElementById('tag').textContent='a fleet at sea';hide();}});
+
+const _v=new THREE.Vector3();
+function project(pos){_v.copy(pos).project(cam);return{x:(_v.x*0.5+0.5)*W(),y:(-_v.y*0.5+0.5)*H(),vis:_v.z<1};}
+const dirv=new THREE.Vector3();
+function updBoat(b,t){const u=b.userData;
+ const isl=islandPos[u.tgt];dirv.set(isl.x-u.x,0,isl.z-u.z);const dd=dirv.length();
+ if(dd<16){if(u.dock===0){voyages++;pushTicker(u.name+' · '+(VERB[u.fleet]||'acts')+' on '+PROTO[u.tgt][0]+' · '+(V[u.name]?V[u.name].n.toLowerCase():''));blip(432.0,0.13,0.08);}u.dock+=0.016;if(u.dock>2.5){u.dock=0;u.tgt=Math.floor(Math.random()*islandPos.length);}}
+ else{dirv.normalize();const s=u.spd*0.016;u.x+=dirv.x*s;u.z+=dirv.z*s;}
+ const y=waveY(u.x,u.z,t);b.position.set(u.x,y+0.2,u.z);
+ b.rotation.set(0,Math.atan2(cam.position.x-u.x,cam.position.z-u.z),Math.sin(t*1.5+u.ph)*0.06);
+ const tsc=(u.active?0.8:0.28)*(b===selected?1.35:1);u.sc+=(tsc-u.sc)*0.15;b.scale.setScalar(u.sc);
+ u.hb.position.set(u.x,y+2,u.z);
+ u.glow.position.set(u.x,y+0.3,u.z);u.glow.material.opacity=u.active?0.24:0.06;const gp=4.2+Math.sin(t*2+u.ph)*0.8;u.glow.scale.set(gp,gp,1);
+ const wk=u.wake;wk.mat.opacity=u.active?0.4:0.08;wk.buf.unshift(u.x,y+0.2,u.z);if(wk.buf.length>wk.n*3)wk.buf.length=wk.n*3;for(let i=0;i<wk.arr.length;i++)wk.arr[i]=wk.buf[i]!==undefined?wk.buf[i]:wk.buf[wk.buf.length-3+(i%3)];wk.geo.attributes.position.needsUpdate=true;wk.geo.setDrawRange(0,Math.floor(wk.buf.length/3));wk.geo.boundingSphere=null;}
+
+// ---- experience layer ----
+const VERB={DCA:'swap',YIELD:'supply',TRADING:'swap',LENDING:'borrow',PREDICTION:'buy outcome',COLLECTING:'collect'};
+const tickerEl=document.getElementById('ticker'),tickerMsg=document.getElementById('tickerMsg');let tickerAt=-99;
+function pushTicker(m){tickerMsg.textContent=m;tickerEl.style.opacity='1';tickerAt=t;}
+const stAgents=document.getElementById('stAgents'),stValue=document.getElementById('stValue'),stVoy=document.getElementById('stVoy');
+stAgents.textContent=boats.length;let voyages=1240;const boundedBase=4820000;
+// sonar ping ring for selection
+const sonar=new THREE.Mesh(new THREE.RingGeometry(0.62,0.92,48),new THREE.MeshBasicMaterial({color:0x4dabff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));sonar.rotation.x=-Math.PI/2;sonar.visible=false;sc.add(sonar);let sonarT=0;
+function pingSonar(p){sonar.position.set(p.x,p.y+0.4,p.z);sonar.visible=true;sonarT=0;}
+// sound (WebAudio, behind a toggle so it never autoplays)
+let audio=null,sndOn=false;
+function initAudio(){if(audio)return;try{const AC=window.AudioContext||window.webkitAudioContext;const ctx=new AC();const master=ctx.createGain();master.gain.value=0.0;master.connect(ctx.destination);const o1=ctx.createOscillator(),o2=ctx.createOscillator(),lp=ctx.createBiquadFilter(),g=ctx.createGain();o1.type='sine';o2.type='sine';o1.frequency.value=55;o2.frequency.value=55.5;lp.type='lowpass';lp.frequency.value=380;g.gain.value=0.6;o1.connect(g);o2.connect(g);g.connect(lp);lp.connect(master);o1.start();o2.start();audio={ctx,master};}catch(e){audio=null;}}
+function setSound(on){sndOn=on;const b=document.getElementById('btnSound');b.textContent=on?'sound on':'sound off';b.classList.toggle('p',on);if(on){initAudio();if(audio){if(audio.ctx.resume)audio.ctx.resume();audio.master.gain.setTargetAtTime(0.12,audio.ctx.currentTime,0.6);}}else if(audio){audio.master.gain.setTargetAtTime(0.0,audio.ctx.currentTime,0.3);}}
+function blip(freq,dur,vol){if(!audio||!sndOn)return;try{const ctx=audio.ctx,o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;o.connect(g);g.connect(audio.master);const n=ctx.currentTime;g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(vol||0.25,n+0.012);g.gain.exponentialRampToValueAtTime(0.0008,n+(dur||0.25));o.start(n);o.stop(n+(dur||0.25)+0.03);}catch(e){}}
+document.getElementById('btnSound').onclick=()=>setSound(!sndOn);
+// idle camera drift + cinematic intro
+controls.autoRotate=false;controls.autoRotateSpeed=0.32;let lastInteract=0;
+controls.addEventListener('start',()=>{lastInteract=t;});
+const introEl=document.getElementById('intro');let introDone=false,introT=0;
+const camStart=new THREE.Vector3(0,440,46),camEnd=new THREE.Vector3(0,152,178),tgtStart=new THREE.Vector3(0,0,-8),tgtEnd=new THREE.Vector3(0,0,-25);
+if(reduce){introDone=true;introEl.style.display='none';}else{controls.enabled=false;cam.position.copy(camStart);controls.target.copy(tgtStart);requestAnimationFrame(()=>introEl.classList.add('go'));}
+
+document.getElementById('boot').style.display='none';
+let t=0;(function loop(){try{t+=0.016;seaPlane.material.uniforms.u_time.value=t;sc.children[0].material.uniforms.u_time.value=t;islMat.uniforms.u_time.value=t;
+ boats.forEach(b=>updBoat(b,t));
+ laneMat.opacity=0.22+0.12*Math.sin(t*1.2);
+ // sonar ping expand+fade
+ if(sonar.visible){sonarT+=0.016;const pr=sonarT/1.2;if(pr>=1.0){sonar.visible=false;}else{const ss=2.0+pr*26.0;sonar.scale.set(ss,ss,ss);sonar.material.opacity=0.7*(1.0-pr);if(selected)sonar.position.set(selected.position.x,selected.position.y+0.4,selected.position.z);}}
+ // ticker fade-out
+ if(t-tickerAt>4.5)tickerEl.style.opacity='0';
+ // instrument HUD (throttled ~2/sec)
+ if(((t*60)|0)%30===0){stValue.textContent='$'+((boundedBase+voyages*1300+Math.sin(t*0.2)*4000)/1e6).toFixed(2)+'M';stVoy.textContent=voyages.toLocaleString();}
+ // camera: cinematic intro crane, then orbit controls + idle drift + selection dolly
+ if(!introDone){introT+=0.016;const pr=Math.min(1.0,introT/3.4);const e=pr<0.5?2.0*pr*pr:1.0-Math.pow(-2.0*pr+2.0,2.0)/2.0;cam.position.lerpVectors(camStart,camEnd,e);controls.target.lerpVectors(tgtStart,tgtEnd,e);cam.lookAt(controls.target);if(pr>=1.0){introDone=true;controls.enabled=true;introEl.classList.add('done');setTimeout(()=>{introEl.style.display='none';},1200);}}
+ else{if(follow&&selected){controls.target.lerp(selected.position,0.06);}controls.autoRotate=(!follow&&!selected&&(t-lastInteract>5.0)&&!reduce);controls.update();if(follow&&selected){const off=cam.position.clone().sub(controls.target);if(off.length()>96.0){off.multiplyScalar(0.985);cam.position.copy(controls.target).add(off);}}}
+ islLabels.forEach(L=>{const p=project(L.pos);L.el.style.left=p.x+'px';L.el.style.top=p.y+'px';L.el.style.opacity=p.vis?'1':'0';});
+ netLabels.forEach(L=>{const p=project(L.pos);L.el.style.left=p.x+'px';L.el.style.top=p.y+'px';L.el.style.opacity=p.vis?'0.9':'0';});
+ composer?composer.render():rdr.render(sc,cam);}catch(err){fail('loop · '+(err&&err.message?err.message:err));return;}requestAnimationFrame(loop);})();
+addEventListener('resize',()=>{cam.aspect=W()/H();cam.updateProjectionMatrix();rdr.setSize(W(),H());if(composer)composer.setSize(W(),H());});
+}catch(err){fail('setup · '+(err&&err.message?err.message:err));}
+</script></body></html>
